@@ -3,7 +3,7 @@ import { MissingFiltersBanner } from "./MissingFiltersBanner"
 import { bankRecDateAtom, bankRecUnreconcileModalAtom, selectedBankAccountAtom } from "./bankRecAtoms"
 import { formatDate } from "@/lib/date"
 import { ListView, type ListViewColumnMeta } from "@/components/ui/list-view"
-import { formatCurrency, getCurrencyFormatInfo } from "@/lib/numbers"
+import { formatCurrency, getCurrencyInputSeparators } from "@/lib/numbers"
 import { getCompanyCurrency } from "@/lib/company"
 import { ArrowDownRight, ArrowUpRight, CheckCircle2, ChevronDown, DollarSign, ExternalLink, ImportIcon, ListIcon, Search, Undo2, XCircle } from "lucide-react"
 import ErrorBanner from "@/components/ui/error-banner"
@@ -329,9 +329,8 @@ const Filters = ({
 
     const currency = bankAccount?.account_currency ?? getCompanyCurrency(bankAccount?.company ?? '')
     const currencySymbol = getCurrencySymbol(currency)
-    const formatInfo = getCurrencyFormatInfo(currency)
-    const groupSeparator = formatInfo.group_sep || ","
-    const decimalSeparator = formatInfo.decimal_str || "."
+    const { groupSeparator, decimalSeparator, decimalScale } =
+        getCurrencyInputSeparators(currency)
 
     return <div className="flex py-2 w-full gap-2">
         <InputGroup variant='outline'>
@@ -352,11 +351,11 @@ const Filters = ({
             <CurrencyInput
                 groupSeparator={groupSeparator}
                 decimalSeparator={decimalSeparator}
-                placeholder={`${currencySymbol}0${decimalSeparator}00`}
-                decimalsLimit={2}
+                placeholder={decimalScale ? `${currencySymbol}0${decimalSeparator}00` : `${currencySymbol}0`}
+                decimalsLimit={decimalScale}
                 value={amountFilter.stringValue}
                 maxLength={12}
-                decimalScale={2}
+                decimalScale={decimalScale}
                 prefix={currencySymbol}
                 onValueChange={(v, _n, values) => {
                     // If the input ends with a decimal or a decimal with trailing zeroes, store the string since we need the user to be able to type the decimals.

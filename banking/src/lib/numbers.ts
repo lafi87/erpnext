@@ -109,7 +109,11 @@ function get_number_format_info(format: string) {
     }
 
     // get the precision from the number format
-    info.precision = format.split(info.decimal_str).slice(1)[0].length;
+    // zero-decimal formats (e.g. "#.###") have an empty decimal_str; splitting by
+    // "" would split per-character and yield a wrong precision, so treat it as 0.
+    info.precision = info.decimal_str
+        ? (format.split(info.decimal_str).slice(1)[0]?.length ?? 0)
+        : 0;
 
     return info;
 }
@@ -245,4 +249,23 @@ export const lstrip = (s: string, chars?: string[]) => {
 export const getCurrencyFormatInfo = (currency?: string) => {
     const format = get_number_format(currency);
     return get_number_format_info(format);
+};
+
+/**
+ * Returns separators safe for react-currency-input-field's <CurrencyInput>,
+ * which throws "decimalSeparator cannot be the same as groupSeparator".
+ * Zero-decimal currencies (e.g. CLP, number format "#.###") have an empty
+ * decimal_str, so the naive `decimal_str || "."` fallback collides with a "."
+ * group separator. Here we keep decimalScale at 0 for those and force a
+ * decimal separator that differs from the group separator.
+ */
+export const getCurrencyInputSeparators = (currency?: string) => {
+    const info = getCurrencyFormatInfo(currency);
+    const groupSeparator = info.group_sep || ",";
+    const decimalScale = info.decimal_str ? 2 : 0;
+    let decimalSeparator = info.decimal_str || ".";
+    if (decimalSeparator === groupSeparator) {
+        decimalSeparator = groupSeparator === "." ? "," : ".";
+    }
+    return { groupSeparator, decimalSeparator, decimalScale };
 };

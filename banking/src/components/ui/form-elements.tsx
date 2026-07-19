@@ -16,7 +16,7 @@ import PartyTypeDropdown, { PartyTypeDropdownProps } from "../common/PartyTypeDr
 import CurrencyInput from "react-currency-input-field"
 import { getSystemDefault } from "@/lib/frappe"
 import { getCurrencySymbol } from "@/lib/currency"
-import { getCurrencyFormatInfo } from "@/lib/numbers"
+import { getCurrencyInputSeparators } from "@/lib/numbers"
 import LinkFieldCombobox, { LinkFieldComboboxProps } from "../common/LinkFieldCombobox"
 import { Select, SelectContent, SelectTrigger, SelectValue } from "./select"
 import { InputGroup, InputGroupAddon } from "./input-group"
@@ -297,10 +297,9 @@ export const CurrencyFormField = ({ name, rules, label, isRequired, formDescript
 
         const { formItemId } = useFormField()
 
-        // Get the correct separators for the currency
-        const formatInfo = getCurrencyFormatInfo(currency ?? defaultCurrency)
-        const groupSeparator = formatInfo.group_sep || ","
-        const decimalSeparator = formatInfo.decimal_str || "."
+        // Get the correct separators for the currency (safe for zero-decimal currencies)
+        const { groupSeparator, decimalSeparator, decimalScale } =
+            getCurrencyInputSeparators(currency ?? defaultCurrency)
 
         return <CurrencyInput
             ref={field.ref}
@@ -317,11 +316,11 @@ export const CurrencyFormField = ({ name, rules, label, isRequired, formDescript
             onFocus={onFocus}
             groupSeparator={groupSeparator}
             decimalSeparator={decimalSeparator}
-            placeholder={`${currencySymbol} 0${decimalSeparator}00`}
-            decimalsLimit={2}
+            placeholder={decimalScale ? `${currencySymbol} 0${decimalSeparator}00` : `${currencySymbol} 0`}
+            decimalsLimit={decimalScale}
             value={field.value}
             maxLength={12}
-            decimalScale={2}
+            decimalScale={decimalScale}
             prefix={currencySymbol + " "}
             onValueChange={(v, _n, values) => {
                 // If the input ends with a decimal or a decimal with trailing zeroes, store the string since we need the user to be able to type the decimals.
